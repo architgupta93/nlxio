@@ -36,12 +36,14 @@ class NTT(object):
 
             # Allocate an empty array for the spikes
             self.t_pts = ts
-            self.spikes = np.empty((self.n_channels, self.n_spikes))
+
+            # We do <n_samples, n_channels> because this seems more amicable to scikit's tools
+            self.spikes = np.empty((self.n_spikes, self.n_channels))
 
             for wvf_index, spike_wvf_set in enumerate(sp):
                 # Each of these is a n_samples_per_spike x n_channel array
                 for channel in range(self.n_channels):
-                    self.spikes[channel, wvf_index] = self._thresholdSpike(sp[wvf_index,:,channel])
+                    self.spikes[wvf_index, channel] = self._thresholdSpike(sp[wvf_index,:,channel])
             return
 
         print("NTT filename not specified. Instantiating empty class object.")
@@ -61,7 +63,7 @@ class NTT(object):
             plt.plot(spike_data)
             plt.show()
 
-        # TODO: See if there is a faster way of doing this!
+        # TODO: See if there is a faster way of doing this! Right now, this takes a lot of time!
         peak_sample_index, peak_sample_value = max(enumerate(spike_data), key=lambda v: v[1])
     
         # TODO: We can make use of the  sample index as well! Both of them have
@@ -85,5 +87,5 @@ class NTT(object):
         # TODO: If only 2 values are supplied, we could just do a 2D scatter plot
         fig = plt.figure()
         ax  = fig.add_subplot(111, projection='3d')
-        ax.scatter3D(self.spikes[plt_axes[0]], self.spikes[plt_axes[1]], self.spikes[plt_axes[2]]);
+        ax.scatter3D(self.spikes[:,plt_axes[0]], self.spikes[:,plt_axes[1]], self.spikes[:,plt_axes[2]]);
         plt.show()
