@@ -67,7 +67,8 @@ class NTT(object):
         # TODO: We can make use of the  sample index as well! Both of them have
         # a very similar meaning though
         # return peak_sample_value / np.log(2+peak_sample_index)
-        return np.log(1e-10 + abs(peak_sample_value))
+        # return np.log(1e-10 + abs(peak_sample_value))
+        return peak_sample_index
 
     def visualize(self, plt_axes=[0, 1, 2]):
         """ Visualize the data as a 3D scatter plot

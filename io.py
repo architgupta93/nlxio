@@ -246,4 +246,33 @@ def loadNvt(filename):
     :returns: TODO
 
     """
+
+    # A video record consists of the following
+    # uint16 - tag (indicator)              bytes 0:1
+    # uint16 - id of the originating system bytes 2:3
+    # uint16 - size of the record (bytes)   bytes 4:5
+    # uint64 - timestamp                    bytes 6:13
+    # unit32 - [array] 400 bitfield values  bytes 14:1613
+    # int16  - Nothing                      bytes 1614:1615
+    # int32  - Extracted X location         bytes 1616:1619
+    # int32  - Extracted Y location         bytes 1620:1623
+    # int32  - Head angle                   bytes 1624:1627
+    # int32  - [array] 50 Target locations  bytes 1628:1631
+
+    f = open(filename, 'rb')
+
+    # Nlx header is supposed to be 16kbyte, i.e. 16 * 2^10 = 2^14
+    header_size = 2 ** 14;
+    header      = str(f.read(2 ** 14)).strip('\x00')
+
+    # Slide through the header data
+    f.seek(2 ** 14)
+
+    # detailed information on the 400 element array
+    dt = np.dtype([('tag', '<u2'), ('ID', '<u2'), ('RS', '<u2'), 
+        ('time', '<u8'), ('bitfield', np.dtype('<u4'), (400,)),
+        ('unused', '<i2'), ('X', '<i4'), ('Y', '<i4'), ('HA', '<i4'),
+        ('targets', np.dtype('<i4'), (50,))])
+    temp = np.fromfile(f, dt)
+
     pass
