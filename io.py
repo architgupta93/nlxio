@@ -243,8 +243,14 @@ def loadNvt(filename):
     """Loads the video tracking data from the .nvt file.
 
     :filename: .nvt file containing the raw data
-    :returns: TODO
+    :returns: a set of three arrays
+        - 'time': Timestamps for the position data
+        - 'X': X coordinate of the extracted position
+        - 'Y': Y coordinate of the extracted position
 
+    TODO: It might be possible to decode the position ourselves using the
+    pixel data that comes along with the extracted position (but doesn't
+    seem necessary at the moment)
     """
 
     # A video record consists of the following
@@ -275,4 +281,7 @@ def loadNvt(filename):
         ('targets', np.dtype('<i4'), (50,))])
     temp = np.fromfile(f, dt)
 
-    pass
+    # For the time being, we will ignore the extra information and just look
+    # at the decoded 'X', and 'Y' positions (along with the time stamps)
+
+    return temp['time'], temp['X'], temp['Y']
