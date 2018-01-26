@@ -56,12 +56,18 @@ class NTT(object):
 
         """
         
+        # DEBUG
+        if 1 is None:
+            plt.plot(spike_data)
+            plt.show()
+
         # TODO: See if there is a faster way of doing this!
         peak_sample_index, peak_sample_value = max(enumerate(spike_data), key=lambda v: v[1])
     
         # TODO: We can make use of the  sample index as well! Both of them have
         # a very similar meaning though
-        return peak_sample_value
+        # return peak_sample_value / np.log(2+peak_sample_index)
+        return np.log(1e-10 + abs(peak_sample_value))
 
     def visualize(self, plt_axes=[0, 1, 2]):
         """ Visualize the data as a 3D scatter plot
