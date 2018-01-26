@@ -36,3 +36,6 @@ nosetests.xml
 
 # rope autocomplete library
 .ropeproject
+
+# Vim swp files
+*.swp
