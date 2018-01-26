@@ -238,3 +238,12 @@ def loadNev(filename):
     temp = np.fromfile(f, dt)
 
     return temp['time'], temp['id'], temp['nttl'], temp['estr']
+
+def loadNvt(filename):
+    """Loads the video tracking data from the .nvt file.
+
+    :filename: .nvt file containing the raw data
+    :returns: TODO
+
+    """
+    pass
