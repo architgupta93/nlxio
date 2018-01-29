@@ -15,7 +15,8 @@ class NTT(object):
        might need here.    
     """
 
-    _SPIKE_THRESHOLD = 120.0
+    _SPIKE_THRESHOLD_H = 80.0
+    _SPIKE_THRESHOLD_L = 20.0
 
     def __init__(self, filename=None ):
         """ Class constructor for NTT class
@@ -46,21 +47,19 @@ class NTT(object):
 
             # We do <n_samples, n_channels> because this seems more amicable to scikit's tools
             self.spikes = np.empty((self.n_spikes, self.n_channels))
-            valid_index = 0
 
-            # TODO: Currently we put in the valid spikes in order and let the
-            # remaining space be inaccessible (by using the n_spikes
-            # variables): This is quite ugly.
             for wvf_index, spike_wvf_set in enumerate(sp):
                 # Each of these is a n_samples_per_spike x n_channel array
                 spike_values, invalid_spike = self._thresholdSpike(sp[wvf_index])
 
                 if invalid_spike:
                     # DEBUG message, fix later.
-                    invalid_spike_list += [invalid_spike]
+                    invalid_spike_list.append(invalid_spike)
                 else:
-                    self.spikes[valid_index] = spike_values
-                    valid_index += 1
+                    self.spikes[wvf_index] = spike_values
+
+            # Clean up the invalid spikes
+            self.spikes = np.delete(self.spikes, invalid_spike_list, axis=0)
 
             # DEBUG: Finding the range of values for a typical spike
             print('Total spikes: %d, valid: %d'% (self.n_spikes, self.n_spikes-len(invalid_spike_list)))
@@ -131,7 +130,7 @@ class NTT(object):
         """
 
         spike_peak = np.max(spike_data, 0)
-        invalid_spike = max(spike_peak) >= self._SPIKE_THRESHOLD
+        invalid_spike = (max(spike_peak) >= self._SPIKE_THRESHOLD_H) or (max(spike_peak) <= self._SPIKE_THRESHOLD_L)
         if dbg_cond and invalid_spike:
             plt.plot(spike_data)
             plt.show()
