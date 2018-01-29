@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import signal
 from .io import loadNtt
 
 # Graphics
@@ -13,6 +14,8 @@ class NTT(object):
        submodule here - It contains most of the basic functionality that we
        might need here.    
     """
+
+    _SPIKE_THRESHOLD = 120.0
 
     def __init__(self, filename=None ):
         """ Class constructor for NTT class
@@ -32,18 +35,41 @@ class NTT(object):
             # TODO: Add a try/catch block around this
             ts, sp, fs = loadNtt(filename)
 
+            # Initially n_spikes serves as the total number of data records
+            # obtained. Later, invalid spikes are removed for better
+            # clustering.
             (self.n_spikes, self.n_samples_per_spike, self.n_channels) = np.shape(sp)
+            invalid_spike_list = []
 
             # Allocate an empty array for the spikes
             self.t_pts = ts
 
             # We do <n_samples, n_channels> because this seems more amicable to scikit's tools
             self.spikes = np.empty((self.n_spikes, self.n_channels))
+            valid_index = 0
 
+            # TODO: Currently we put in the valid spikes in order and let the
+            # remaining space be inaccessible (by using the n_spikes
+            # variables): This is quite ugly.
             for wvf_index, spike_wvf_set in enumerate(sp):
                 # Each of these is a n_samples_per_spike x n_channel array
-                for channel in range(self.n_channels):
-                    self.spikes[wvf_index, channel] = self._thresholdSpike(sp[wvf_index,:,channel])
+                spike_values, invalid_spike = self._thresholdSpike(sp[wvf_index])
+
+                if invalid_spike:
+                    # DEBUG message, fix later.
+                    invalid_spike_list += [invalid_spike]
+                else:
+                    self.spikes[valid_index] = spike_values
+                    valid_index += 1
+
+            # DEBUG: Finding the range of values for a typical spike
+            print('Total spikes: %d, valid: %d'% (self.n_spikes, self.n_spikes-len(invalid_spike_list)))
+            print('Max: %f,'% np.max(self.spikes))
+            print('Min: %f,'% np.min(self.spikes))
+            print('Median: %f.'% np.median(self.spikes))
+
+            self.n_spikes = len(self.spikes)
+
             return
 
         print("NTT filename not specified. Instantiating empty class object.")
@@ -53,24 +79,65 @@ class NTT(object):
         """Protected function for converting a spike waveform into a scalar spike
            Details TBD
 
-        :spike_data: Raw spike waveform data that is directly read from the NTT file
+        :spike_data: Raw spike waveform data that is directly read from the NTT
+            file
+        :invalid_spike: In case the data looks somewhat absurd, we should ignore
+            it. The criteria for that is decided by the SPIKE_THRESHOLD in the
+            class. If the peak value exceeds this value, it should be ignored
         :returns: TODO
 
         """
-        
-        # DEBUG
-        if 1 is None:
+
+        # Debug condition
+        dbg_cond = (1 == 0)
+
+        """
+        Method 01: Finding the correlation between the spike waveforms and
+        looking at the peak value/index. This should be a good proxy for
+        propagation delay.
+        """
+
+        """
+        # Normalize the data, clear the mean and make the area 1
+        spike_data[:,0] = spike_data[:,0] - np.mean(spike_data[:,0])
+        spike_data[:,1] = spike_data[:,1] - np.mean(spike_data[:,1])
+        spike_data[:,2] = spike_data[:,2] - np.mean(spike_data[:,2])
+        spike_data[:,3] = spike_data[:,3] - np.mean(spike_data[:,3])
+
+        spike_data[:,0] = spike_data[:,0]/np.linalg.norm(spike_data[:,0])
+        spike_data[:,1] = spike_data[:,1]/np.linalg.norm(spike_data[:,1])
+        spike_data[:,2] = spike_data[:,2]/np.linalg.norm(spike_data[:,2])
+        spike_data[:,3] = spike_data[:,3]/np.linalg.norm(spike_data[:,3])
+
+        # Get the cross-correlation
+        xcorr_s0s1 = signal.correlate(spike_data[:,0], spike_data[:,1])
+        xcorr_s0s2 = signal.correlate(spike_data[:,0], spike_data[:,2])
+        xcorr_s0s3 = signal.correlate(spike_data[:,0], spike_data[:,3])
+
+        corr_index = [np.linalg.norm(xcorr_s0s1), np.linalg.norm(xcorr_s0s2), np.linalg.norm(xcorr_s0s3)]
+
+        if dbg_cond:
+            ax_spikes = plt.subplot(2, 1, 1)
+            ax_spikes.plot(spike_data)
+
+            ax_corr = plt.subplot(2, 1, 2)
+            ax_corr.plot(xcorr_s0s1)
+            ax_corr.plot(xcorr_s0s2)
+            ax_corr.plot(xcorr_s0s3)
+
+            plt.show()
+
+        return corr_index
+        """
+
+        spike_peak = np.max(spike_data, 0)
+        invalid_spike = max(spike_peak) >= self._SPIKE_THRESHOLD
+        if dbg_cond and invalid_spike:
             plt.plot(spike_data)
             plt.show()
 
-        # TODO: See if there is a faster way of doing this! Right now, this takes a lot of time!
-        peak_sample_index, peak_sample_value = max(enumerate(spike_data), key=lambda v: v[1])
-    
-        # TODO: We can make use of the  sample index as well! Both of them have
-        # a very similar meaning though
-        # return peak_sample_value / np.log(2+peak_sample_index)
-        return np.log(1e-10 + abs(peak_sample_value))
-        # return peak_sample_index
+        return(spike_peak, invalid_spike)
+
 
     def visualize(self, plt_axes=[0, 1, 2]):
         """ Visualize the data as a 3D scatter plot
