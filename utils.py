@@ -54,7 +54,7 @@ class NTT(object):
 
                 if invalid_spike:
                     # DEBUG message, fix later.
-                    invalid_spike_list.append(invalid_spike)
+                    invalid_spike_list.append(wvf_index)
                 else:
                     self.spikes[wvf_index] = spike_values
 
