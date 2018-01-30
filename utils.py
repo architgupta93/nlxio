@@ -6,6 +6,46 @@ from .io import loadNtt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
+# Binning the position data obtained from an NVT file
+def binPosition(loc_data, n_bins):
+    """
+    Takes in location data returned by loadNvt and bins it.
+
+    :loc_data: Array consiting of 1D arrays:
+        - First array should correspond to time stamps for the data
+        - Subsequent arrays represent X and Y dimensions
+    :n_bins: Number of bins to be used in each dimension for discretizing the
+        position. For example n_bins=9 will give a total of 81 bins
+    :returns: TODO
+
+    """
+
+    # Extract relevant fields from the location data
+    t_stamps = loc_data[0]
+    x_pos    = loc_data[1]
+    y_pos    = loc_data[2]
+
+    # Find the Min and Max (x, y) values for binning
+    min_x    = min(x_pos)
+    max_x    = max(x_pos)
+
+    min_y    = min(y_pos)
+    max_y    = max(y_pos)
+
+    x_bin_sz = float(max_x - min_x) / float(n_bins)
+    y_bin_sz = float(max_y - min_y) / float(n_bins)
+
+    # TODO: Maybe we can have non-uniform bins at some later point. For now,
+    # uniformly sized bins would do.
+
+    timed_bins = []
+    for index, t_val in enumerate(t_stamps):
+        bin_idx = round((x_pos[index] - min_x)/x_bin_sz) + n_bins * round((y_pos[index] - min_y)/y_bin_sz)
+        timed_bins.append((t_val,bin_idx))
+
+    return timed_bins
+
+# Class for storing/manipulating the Tetrode data
 class NTT(object):
 
     """Class structure for storing tetrode data
