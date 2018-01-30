@@ -63,9 +63,12 @@ class NTT(object):
 
             # DEBUG: Finding the range of values for a typical spike
             print('Total spikes: %d, valid: %d'% (self.n_spikes, self.n_spikes-len(invalid_spike_list)))
-            print('Max: %f,'% np.max(self.spikes))
-            print('Min: %f,'% np.min(self.spikes))
-            print('Median: %f.'% np.median(self.spikes))
+            print('')
+
+            print('Spike amplitude information: ')
+            print('Max: %.2fmV,'% np.max(self.spikes))
+            print('Min: %.2fmV,'% np.min(self.spikes))
+            print('Median: %.2fmV.'% np.median(self.spikes))
 
             self.n_spikes = len(self.spikes)
 
